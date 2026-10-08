@@ -87,6 +87,10 @@ button.b:active{transform:scale(.96)}.b.red{background:var(--red);color:#fff}.bt
 @media(max-width:1180px){.team{display:none}}
 @media(max-width:900px){body{height:auto;overflow:auto}.hero{position:static;margin:8px;min-height:calc(100vh - 16px)}.arc{flex-direction:column;padding:20px 0;gap:16px;perspective:none}.card{position:relative;left:auto;top:auto;width:min(340px,90%);height:auto;transform:none!important}#webcam-container{min-height:170px}.team{display:flex;position:static;margin:10px auto 22px}.nav .logo span{display:none}}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+#cur{will-change:transform}
+:root.lite .card,:root.lite .team{-webkit-backdrop-filter:blur(8px) saturate(160%);backdrop-filter:blur(8px) saturate(160%)}
+:root.lite .cloud,:root.lite .orb,:root.lite .star{animation-play-state:paused}
+:root.lite .bird{display:none}
 </style>
 </head>
 <body>
@@ -203,20 +207,29 @@ setInterval(()=>{if(isl.classList.contains("pin"))$("idet").textContent=clean("g
 /* Mata kucing mengikuti mouse */
 let tx=innerWidth/2,ty=innerHeight;
 addEventListener("pointermove",e=>{tx=e.clientX;ty=e.clientY});
-(function look(){
-  [["i-model","pl",11.5,15],["i-bt","pr",22.5,15]].forEach(([e,q,bx,by])=>{
-    const b=$(e).getBoundingClientRect(),dx=tx-(b.left+b.width/2),dy=ty-(b.top+b.height/2),d=Math.hypot(dx,dy)||1,k=Math.min(2.2,d/25),el=$(q);
-    el.setAttribute("cx",bx+dx/d*k);el.setAttribute("cy",by+dy/d*k);
-  });
-  requestAnimationFrame(look);
-})();
+let EC=[];
+function calcEyes(){EC=[["i-model","pl",11.5,15],["i-bt","pr",22.5,15]].map(([e,q,bx,by])=>{const b=$(e).getBoundingClientRect();return{x:b.left+b.width/2,y:b.top+b.height/2,bx,by,el:$(q)}})}
+function lookUpdate(){EC.forEach(o=>{const dx=tx-o.x,dy=ty-o.y,d=Math.hypot(dx,dy)||1,k=Math.min(2.2,d/25);o.el.setAttribute("cx",o.bx+dx/d*k);o.el.setAttribute("cy",o.by+dy/d*k)})}
+addEventListener("resize",calcEyes);addEventListener("load",()=>{calcEyes();setTimeout(calcEyes,600)});
 
 /* Kursor ala Figma */
 const cur=$("cur");let cx=0,cy=0,moved=false;
 addEventListener("pointermove",e=>{if(!moved){cx=tx;cy=ty;moved=true}cur.style.opacity=e.target.closest&&e.target.closest("input:not([type=color])")?0:1});
 document.addEventListener("mouseleave",()=>cur.style.opacity=0);
 addEventListener("pointerdown",()=>cur.classList.add("down"));addEventListener("pointerup",()=>cur.classList.remove("down"));
-(function move(){cx+=(tx-cx)*.3;cy+=(ty-cy)*.3;cur.style.transform=`translate(${cx}px,${cy}px)`;requestAnimationFrame(move)})();
+let lastT=performance.now(),slow=0,ltx=-1,lty=-1;
+try{if(localStorage.getItem("lite")==="1")document.documentElement.classList.add("lite")}catch(e){}
+(function move(){
+  const now=performance.now(),dt=now-lastT;lastT=now;
+  const rt=document.documentElement;
+  if(!rt.classList.contains("lite")){
+    if(dt>30){slow++}else{slow=Math.max(0,slow-1)}
+    if(slow>45){rt.classList.add("lite");try{localStorage.setItem("lite","1")}catch(e){}}
+  }
+  if(Math.abs(tx-cx)>.05||Math.abs(ty-cy)>.05){cx+=(tx-cx)*.3;cy+=(ty-cy)*.3;cur.style.transform=`translate3d(${cx}px,${cy}px,0)`}
+  if(tx!==ltx||ty!==lty){ltx=tx;lty=ty;lookUpdate()}
+  requestAnimationFrame(move);
+})();
 function setCursor(c){
   if(typeof c==="string")root.style.setProperty("--cur",c);
   const col=(getComputedStyle(root).getPropertyValue("--cur").trim()||"#ffffff"),h=col.replace("#","");
@@ -340,7 +353,7 @@ async function doLoadModel(auto){
     if(typeof Hands==="undefined"){throw new Error("hands.js termuat tapi isinya bukan library MediaPipe. Hapus folder vendor dari hosting atau pastikan file aslinya.")}
     setStatus("modelStatus","Mengunduh model (±16 MB), mohon tunggu...");
     const hands=new Hands({locateFile:f=>base+f});
-    hands.setOptions({maxNumHands:1,modelComplexity:1,minDetectionConfidence:.6,minTrackingConfidence:.6});
+    hands.setOptions({maxNumHands:1,modelComplexity:0,minDetectionConfidence:.6,minTrackingConfidence:.6});
     hands.onResults(r=>{lastResults=r});
     await Promise.race([hands.initialize(),new Promise((_,no)=>setTimeout(()=>no(new Error("Terlalu lama mengunduh model dari "+base+"\nCek koneksi internet, lalu refresh halaman.")),120000))]);
     model=hands;
