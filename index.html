@@ -335,11 +335,14 @@ async function doLoadModel(auto){
   if(model){return}
   try{
     setStatus("modelStatus","Memuat model...");
+    setStatus("modelStatus","Memuat library MediaPipe...");
     const base=await loadHandsLibrary();
+    if(typeof Hands==="undefined"){throw new Error("hands.js termuat tapi isinya bukan library MediaPipe. Hapus folder vendor dari hosting atau pastikan file aslinya.")}
+    setStatus("modelStatus","Mengunduh model (±16 MB), mohon tunggu...");
     const hands=new Hands({locateFile:f=>base+f});
     hands.setOptions({maxNumHands:1,modelComplexity:1,minDetectionConfidence:.6,minTrackingConfidence:.6});
     hands.onResults(r=>{lastResults=r});
-    await hands.initialize();
+    await Promise.race([hands.initialize(),new Promise((_,no)=>setTimeout(()=>no(new Error("Terlalu lama mengunduh model dari "+base+"\nCek koneksi internet, lalu refresh halaman.")),120000))]);
     model=hands;
     setStatus("modelStatus","Model siap - 5 gesture","success");
   }catch(error){
