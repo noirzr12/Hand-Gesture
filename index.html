@@ -4,8 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Hand Gesture Bluetooth Controller - Muhammad Akhdan Ghaisan</title>
-<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
 <style>
 :root{--sky:linear-gradient(180deg,#1b78e8,#4aa6f5 60%,#9bd4ff);--cloud:#fff;--co:.9;--g:rgba(10,50,130,.12);--gl:rgba(212,249,92,.14);--gb:rgba(60,110,255,.16);--gk:rgba(5,12,40,.22);--lime:#d4f95c;--ink:#0e1116;--green:#14ae5c;--red:#f24822;--amber:#f5b800;--pop:#fff;--pt:#0e1116;--bird:#0f2d66}
 :root[data-theme=dark]{--sky:linear-gradient(180deg,#040a1c,#0b1f4d 60%,#1a3d85);--cloud:#2a4f9a;--co:.5;--g:rgba(255,255,255,.05);--pop:#131c30;--pt:#f2f5fa;--bird:#dbe8ff}
@@ -107,14 +105,13 @@ button.b:active{transform:scale(.96)}.b.red{background:var(--red);color:#fff}.bt
   </nav>
   <div class="headline">
     <h1>Kendalikan robot dengan<br><span>gerakan tanganmu</span></h1>
-    <p class="sub">Muhammad Akhdan Ghaisan · Teachable Machine → Camera → Bluetooth → micro:bit</p>
+    <p class="sub">Muhammad Akhdan Ghaisan · Hand Tracking → Camera → Bluetooth → micro:bit</p>
     <button class="pill" onclick="startTutorial()">LIHAT TUTORIAL</button>
   </div>
   <div class="arc">
     <section class="card" id="k-model">
-      <h2>Teachable Machine</h2>
-      <p class="info">Paste link model Teachable Machine kamu di bawah.</p>
-      <input id="modelUrl" type="text" placeholder="Paste link di sini...">
+      <h2>Hand Tracking</h2>
+      <p class="info">Model pelacak tangan dimuat langsung dari website ini, tanpa link Teachable Machine.</p>
       <button class="b" onclick="loadModel()">Load Model</button>
       <div id="modelStatus" class="status"><span class="dot"></span> Model belum dimuat</div>
     </section>
@@ -150,8 +147,8 @@ button.b:active{transform:scale(.96)}.b.red{background:var(--red);color:#fff}.bt
 </main>
 
 <div class="folder" id="folder">
-  <div class="fmenu"><p class="info" style="margin:0">Link Teachable Machine</p><input id="tmLink" value="https://teachablemachine.withgoogle.com/models/GANTI-LINK-MODELMU/" spellcheck="false"><button class="b" onclick="copyLink(this)">Copy link</button><p class="info" style="margin:0">Salin, lalu paste di kolom model.</p></div>
-  <button class="fbtn" onclick="document.getElementById('folder').classList.toggle('open')" aria-label="Folder link"><span class="fb"></span><span class="fp"></span><span class="ff"></span></button>
+  <div class="fmenu"><p class="info" style="margin:0">Panduan gesture</p><p class="info" style="margin:0;opacity:.95;line-height:1.9">Telunjuk ke atas: MAJU<br>Telunjuk ke bawah: MUNDUR<br>Telunjuk ke kirimu: KIRI<br>Telunjuk ke kananmu: KANAN<br>Telapak terbuka atau kepal: STOP</p></div>
+  <button class="fbtn" onclick="document.getElementById('folder').classList.toggle('open')" aria-label="Panduan gesture"><span class="fb"></span><span class="fp"></span><span class="ff"></span></button>
 </div>
 <div class="pop" id="curPop"><h3>Kursor kamu</h3><input id="curName" maxlength="14" placeholder="Nama kursor" oninput="setCursor()"><div class="sw" id="sw"></div></div>
 <div class="cursor" id="cur"><svg width="20" height="22" viewBox="0 0 20 22"><path d="M2 2l5 16 3.5-6 6-3.5z" fill="var(--cur,#fff)" stroke="#0e1116" stroke-width="1.2" stroke-linejoin="round"/></svg><span class="tag" id="curTag">Ghaisan</span></div>
@@ -175,16 +172,6 @@ function toggleTheme(e){
   t.ready.then(()=>root.animate({clipPath:[`circle(0px at ${x}px ${y}px)`,`circle(${rad}px at ${x}px ${y}px)`]},{duration:1000,easing:"cubic-bezier(.65,0,.35,1)",pseudoElement:"::view-transition-new(root)"}));
 }
 
-/* Salin link */
-async function copyLink(btn){
-  const t=$("tmLink").value.trim();if(!t){pulse("Isi link dulu");return}
-  try{await navigator.clipboard.writeText(t)}catch(e){const a=document.createElement("textarea");a.value=t;document.body.appendChild(a);a.select();document.execCommand("copy");a.remove()}
-  if(!/GANTI/.test(t))syncLink(t,"t");const o=btn.textContent;btn.textContent="Tersalin";pulse("Link disalin");setTimeout(()=>btn.textContent=o,1500);
-}
-function syncLink(v,from){sv("modelLink",v);if(from!=="m")$("modelUrl").value=v;if(from!=="t")$("tmLink").value=v}
-const savedLink=ld("modelLink");if(savedLink){$("modelUrl").value=savedLink;$("tmLink").value=savedLink}
-$("tmLink").addEventListener("input",()=>syncLink($("tmLink").value,"t"));
-$("modelUrl").addEventListener("input",()=>syncLink($("modelUrl").value,"m"));
 addEventListener("click",e=>{if(!e.target.closest("#folder"))$("folder").classList.remove("open")});
 
 /* Carousel kartu */
@@ -263,8 +250,8 @@ resetFlyers();setInterval(spawnFlyer,5000);
 
 /* Tutorial */
 const STEPS=[
-  {s:"#k-model",t:"Muat model",d:"Tempel link model (atau salin lewat folder, nanti terisi otomatis), lalu klik Load Model."},
-  {s:"#k-cam",t:"Nyalakan kamera",d:"Klik Start Camera dan izinkan akses kamera. Tunjukkan gesture ke kamera."},
+  {s:"#k-model",t:"Muat model",d:"Model pelacak tangan dimuat otomatis. Kalau statusnya belum siap, klik Load Model."},
+  {s:"#k-cam",t:"Nyalakan kamera",d:"Klik Start Camera dan izinkan akses kamera. Tunjuk dengan telunjuk (atas, bawah, kiri, kanan), telapak terbuka untuk berhenti."},
   {s:"#k-bt",t:"Hubungkan micro:bit",d:"Klik Connect micro:bit dan pilih perangkatmu. Setelah itu command terkirim otomatis."}
 ];
 let si=0,tutOn=false,S=null,T=null;
@@ -315,35 +302,61 @@ function setStatus(elementId,text,type=""){
             `;
 }
 
-async function loadModel(){
-  const input=document.getElementById("modelUrl");
-  let url=input.value.trim();
-  if(!url){alert("Masukkan link Teachable Machine terlebih dahulu.");return}
-  if(!url.includes("teachablemachine.withgoogle.com/models/")){alert("Link harus berupa link model Teachable Machine.");return}
+const CDN="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/";
+const LOCAL=new URL("vendor/mediapipe-hands/",document.baseURI).href;
+const LINKS=[[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[5,9],[9,10],[10,11],[11,12],[9,13],[13,14],[14,15],[15,16],[13,17],[17,18],[18,19],[19,20],[0,17]];
+let landmarks=null,handScore=0,history=[],noHandSince=0,lastVideoTime=-1,lastResults=null;
+
+function loadScript(src){
+  return new Promise((ok,fail)=>{
+    const t=document.createElement("script");
+    t.src=src;t.onload=ok;t.onerror=()=>fail(new Error("Gagal memuat "+src));
+    document.head.appendChild(t);
+  });
+}
+
+/* Pakai file lokal (folder vendor) dulu, kalau tidak ada baru lewat internet */
+async function loadHandsLibrary(){
+  for(const base of [LOCAL,CDN]){
+    try{await loadScript(base+"hands.js");return base}catch(e){console.warn(e.message)}
+  }
+  throw new Error("hands.js tidak ditemukan. Pastikan folder vendor/mediapipe-hands ikut ter-upload ke hosting, atau cek koneksi internet.");
+}
+
+async function loadModel(auto){
+  if(model){return}
   try{
     setStatus("modelStatus","Memuat model...");
-    if(!url.endsWith("/")){url+="/"}
-    model=await tmImage.load(url+"model.json",url+"metadata.json");
-    const classCount=model.getTotalClasses();
-    setStatus("modelStatus","Model siap - "+classCount+" gesture","success");
-    console.log("Jumlah class:",classCount);
+    const base=await loadHandsLibrary();
+    const hands=new Hands({locateFile:f=>base+f});
+    hands.setOptions({maxNumHands:1,modelComplexity:1,minDetectionConfidence:.6,minTrackingConfidence:.6});
+    hands.onResults(r=>{lastResults=r});
+    await hands.initialize();
+    model=hands;
+    setStatus("modelStatus","Model siap - 5 gesture","success");
   }catch(error){
     console.error(error);
     setStatus("modelStatus","Gagal memuat model","error");
-    alert("Model gagal dimuat.\n\n"+error.message);
+    if(auto!==true){alert("Model gagal dimuat.\n\n"+error.message)}
   }
 }
 
 async function startCamera(){
-  if(!model){alert("Load model Teachable Machine terlebih dahulu.");return}
   if(webcam){return}
+  if(!window.isSecureContext){alert("Kamera hanya jalan di HTTPS atau localhost.\n\nBuka website lewat alamat https://");return}
+  if(!model){await loadModel()}
+  if(!model){return}
   try{
-    webcam=new tmImage.Webcam(480,480,true);
-    await webcam.setup();
-    await webcam.play();
+    const video=document.createElement("video");
+    video.playsInline=true;video.muted=true;
+    video.srcObject=await navigator.mediaDevices.getUserMedia({video:{width:640,height:480,facingMode:"user"},audio:false});
+    await video.play();
+    const canvas=document.createElement("canvas");
+    canvas.width=480;canvas.height=480;
+    webcam={video:video,canvas:canvas,ctx:canvas.getContext("2d")};
     const container=document.getElementById("webcam-container");
     container.innerHTML="";
-    container.appendChild(webcam.canvas);
+    container.appendChild(canvas);
     cameraRunning=true;
     requestAnimationFrame(predictionLoop);
   }catch(error){
@@ -352,9 +365,22 @@ async function startCamera(){
   }
 }
 
+function drawFrame(){
+  const {video,canvas,ctx}=webcam,vw=video.videoWidth,vh=video.videoHeight,side=Math.min(vw,vh),sx=(vw-side)/2,sy=(vh-side)/2,S=canvas.width;
+  ctx.save();ctx.translate(S,0);ctx.scale(-1,1);
+  ctx.drawImage(video,sx,sy,side,side,0,0,S,S);
+  if(landmarks){
+    const P=landmarks.map(p=>[(p.x*vw-sx)/side*S,(p.y*vh-sy)/side*S]);
+    ctx.strokeStyle="rgba(255,255,255,.85)";ctx.lineWidth=3;ctx.beginPath();
+    LINKS.forEach(([a,b])=>{ctx.moveTo(P[a][0],P[a][1]);ctx.lineTo(P[b][0],P[b][1])});ctx.stroke();
+    ctx.fillStyle="#fff";P.forEach(([x,y])=>{ctx.beginPath();ctx.arc(x,y,4,0,7);ctx.fill()});
+  }
+  ctx.restore();
+}
+
 async function predictionLoop(){
   if(!cameraRunning){return}
-  webcam.update();
+  drawFrame();
   await predict();
   requestAnimationFrame(predictionLoop);
 }
@@ -369,15 +395,47 @@ function getMappings(){
   ];
 }
 
+/* Membaca bentuk tangan dari 21 titik landmark */
+function classify(lm){
+  const d=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),w=lm[0];
+  const up=(t,p)=>d(lm[t],w)>d(lm[p],w)*1.08;
+  const idx=up(8,6),mid=up(12,10),ring=up(16,14),pinky=up(20,18);
+  const n=idx+mid+ring+pinky;
+  if(n===4||n===0){return "stop"}
+  if(idx&&!mid&&!ring&&!pinky){
+    const dx=lm[8].x-lm[5].x,dy=lm[8].y-lm[5].y;
+    if(Math.abs(dy)>=Math.abs(dx)){return dy<0?"maju":"mundur"}
+    return dx>0?"kiri":"kanan";
+  }
+  return "";
+}
+
 async function predict(){
   if(!model||!webcam){return}
-  const predictions=await model.predict(webcam.canvas);
-  let bestPrediction=predictions[0];
-  for(const prediction of predictions){
-    if(prediction.probability>bestPrediction.probability){bestPrediction=prediction}
+  const v=webcam.video;
+  if(v.currentTime!==lastVideoTime){
+    lastVideoTime=v.currentTime;
+    await model.send({image:v});
+    const res=lastResults;
+    if(res&&res.multiHandLandmarks&&res.multiHandLandmarks.length){
+      const hs=res.multiHandedness&&res.multiHandedness[0];
+      landmarks=res.multiHandLandmarks[0];
+      handScore=hs?hs.score:1;
+      noHandSince=0;
+      history.push(classify(landmarks));
+    }else{
+      landmarks=null;
+      handScore=0;
+      if(!noHandSince){noHandSince=Date.now()}
+      /* Tangan hilang lebih dari 1 detik: robot berhenti */
+      history.push(Date.now()-noHandSince>1000?"stop":"");
+    }
+    if(history.length>6){history.shift()}
   }
-  const gestureName=bestPrediction.className;
-  const probability=bestPrediction.probability;
+  const last=history[history.length-1]||"";
+  const stable=history.length>=5&&history.slice(-5).every(x=>x===last);
+  const gestureName=stable&&last?last:"---";
+  const probability=gestureName==="---"?0:(landmarks?handScore:1);
   const percentage=Math.round(probability*100);
   document.getElementById("gestureName").textContent=gestureName;
   document.getElementById("confidence").textContent=percentage+"%";
@@ -401,6 +459,7 @@ async function predict(){
 }
 
 async function connectBluetooth(){
+  if(!window.isSecureContext){alert("Web Bluetooth hanya jalan di HTTPS atau localhost.\n\nBuka website lewat alamat https://");return}
   if(!navigator.bluetooth){
     alert("Browser tidak mendukung Web Bluetooth.\n\n"+"Gunakan Google Chrome atau Microsoft Edge.");
     return;
@@ -410,8 +469,8 @@ async function connectBluetooth(){
     bluetoothDevice.addEventListener("gattserverdisconnected",bluetoothDisconnected);
     const server=await bluetoothDevice.gatt.connect();
     const service=await server.getPrimaryService(UART_SERVICE);
-    /* micro:bit UART RX digunakan untuk menerima command dari browser. */
-    uartCharacteristic=await service.getCharacteristic(UART_RX);
+    /* Karakteristik tulis micro:bit (6e400002) menerima command dari browser. */
+    uartCharacteristic=await service.getCharacteristic(UART_TX);
     setStatus("bluetoothStatus","Terhubung: "+(bluetoothDevice.name||"micro:bit"),"success");
   }catch(error){
     console.error(error);
@@ -446,6 +505,9 @@ function disconnectBluetooth(){
   bluetoothDevice=null;
   setStatus("bluetoothStatus","Belum terhubung");
 }
+
+/* Model dimuat otomatis saat halaman dibuka */
+addEventListener("load",()=>loadModel(true));
 </script>
 </body>
 </html>
