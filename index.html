@@ -323,7 +323,15 @@ async function loadHandsLibrary(){
   throw new Error("hands.js tidak ditemukan. Pastikan folder vendor/mediapipe-hands ikut ter-upload ke hosting, atau cek koneksi internet.");
 }
 
-async function loadModel(auto){
+/* Cegah dua proses muat model berjalan bersamaan (penyebab error "Module.arguments") */
+let modelPromise=null;
+function loadModel(auto){
+  if(model){return Promise.resolve()}
+  if(!modelPromise){modelPromise=doLoadModel(auto).finally(()=>{if(!model){modelPromise=null}})}
+  return modelPromise;
+}
+
+async function doLoadModel(auto){
   if(model){return}
   try{
     setStatus("modelStatus","Memuat model...");
