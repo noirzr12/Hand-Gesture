@@ -469,7 +469,8 @@ async function predict(){
   const gestureName=stable&&last?last:"---";
   const probability=gestureName==="---"?0:(landmarks?handScore:1);
   const percentage=Math.round(probability*100);
-  document.getElementById("gestureName").textContent=gestureName;
+  const cmdName=(getMappings().find(m=>m.gesture===gestureName)||{}).command||gestureName;
+  document.getElementById("gestureName").textContent=cmdName;
   document.getElementById("confidence").textContent=percentage+"%";
   document.getElementById("confidenceBar").style.width=percentage+"%";
 
@@ -501,8 +502,8 @@ async function connectBluetooth(){
     bluetoothDevice.addEventListener("gattserverdisconnected",bluetoothDisconnected);
     const server=await bluetoothDevice.gatt.connect();
     const service=await server.getPrimaryService(UART_SERVICE);
-    /* Karakteristik tulis micro:bit (6e400002) menerima command dari browser. */
-    uartCharacteristic=await service.getCharacteristic(UART_TX);
+    /* Karakteristik tulis micro:bit (6e400003) menerima command dari browser, sama seperti versi Teachable Machine. */
+    uartCharacteristic=await service.getCharacteristic(UART_RX);
     setStatus("bluetoothStatus","Terhubung: "+(bluetoothDevice.name||"micro:bit"),"success");
   }catch(error){
     console.error(error);
